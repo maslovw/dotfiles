@@ -14,6 +14,7 @@ Plug 'flxo/bake.vim'
 Plug 'drmikehenry/vim-headerguard'
 
 Plug 'altercation/vim-colors-solarized'
+Plug 'tpope/vim-dispatch'
 call plug#end()
 
 source $MYVIMRC/../esr.vim
@@ -148,4 +149,9 @@ if has("autocmd")
     autocmd BufWritePre *.txt,*.js,*.py,*.wiki,*.sh,*.coffee,*.cpp,*.h :call CleanExtraSpaces()
 endif
 
-command Bake echo "bake"
+let g:bake_custom_args = "--time -r"
+
+
+" Open PDF as text using `pdftotxt` tool
+:command! -complete=file -nargs=1 Rpdf :r !pdftotext -nopgbrk <q-args> -
+:command! -complete=file -nargs=1 Rpdf :r !pdftotext -nopgbrk <q-args> - |fmt -csw78

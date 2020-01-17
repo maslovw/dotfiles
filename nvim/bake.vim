@@ -1,12 +1,15 @@
-if exists('g:loaded_myplugin')
-"finish
+"""
+" s:bake_make_cmd contains executable command (:make or :Make)
+" s:bake_args contains latest bake arguments (automatically reassigned)
+" g:bake_custom_args: additional arguments for bake
+" let s:bake_current_project = " "
+"""
+
+if exists('g:bake_loaded')
+    finish
 endif
 
-let g:loaded_myplugin = 1
-
-fun! BakeGetCurrentProject()
-
-endfun
+let g:bake_loaded = 1
 
 " Bake: diab error
 set errorformat=\"%f\"\\,\ line\ %l:\ %s\ %trror\ %m
@@ -30,11 +33,12 @@ if !has("python3")
   finish
 endif
 
-"""
-" g:bake_args contains latest bake arguments
+" Detect if Dispatch plugin installed to use :Make
+autocmd VimEnter * if exists(':Make') == 2 | let s:bake_make_cmd = "Bake " | else | let s:bake_make_cmd = "Bake " | endif
+" autocmd VimEnter * if exists(':Make') == 2 | let s:bake_make_cmd = "Make " | else | let s:bake_make_cmd = "make " | endif
 
-"""
 
+let g:bake_custom_args = ""
 
 py3 << endpython
 
@@ -57,10 +61,13 @@ def _find_closest_project_meta(path):
     return None
 
 def BakeFindCurrentProjectPath():
-    return _find_closest_project_meta(vim.eval('expand("%:ph")'))
+    res = _find_closest_project_meta(vim.eval('expand("%:ph")'))
+    cur_project = res.replace(os.sep, posixpath.sep)
+    vim.command('let g:bake_cur_prj = "{}"'.format(cur_project))
+    return res
 
 def BakeGetCurrentLib(libConfig=None, options=None):
-    vim.command('unlet! g:bake_args')
+    vim.command('unlet! s:bake_args')
     PM = BakeFindCurrentProjectPath()
     if PM is None: 
         return 1
@@ -69,18 +76,11 @@ def BakeGetCurrentLib(libConfig=None, options=None):
         cmd += "-b {} ".format(libConfig)
     if options: 
         cmd += "{} ".format(options)
-    vim.command('let g:bake_args = "{}"'.format(cmd))
+    vim.command('let s:bake_args = "{}"'.format(cmd))
     return cmd
 
 def BakeGetCurrentUnitTest(adapt):
     return BakeGetCurrentLib('UnitTestBase', "--do run --adapt {}".format(adapt))
-    #    vim.command('unlet! g:bake_args')
-    #    PM = BakeFindCurrentProjectPath()
-    #    if PM is None: 
-    #        return 1
-    #    cmd = "--abs-paths -r --do run -m {} -b UnitTestBase --adapt {} ".format(PM.replace(os.sep, posixpath.sep), adapt)
-    #    vim.command('let g:bake_args = "{}"'.format(cmd))
-    #    return cmd
 
 def _call_bake(args):
     if sys.platform == 'win32':
@@ -101,49 +101,68 @@ def BakeGetIncludes(json_file_name):
     s.strip()
     s.replace(' ', '\ ')
     s.replace('/', '\\ ')
-    vim.command('let g:bake_includes = "{}"'.format(s))
+    vim.command('let s:bake_includes = "{}"'.format(s))
     return s
+
+# bakeListStr - output of `bake --list`
+def BakeGetListConfigs(bakeListStr):
+    # vim.command('let s:bake_current_config_list = "{}"'.format(bakeListStr))
+    # return bakeListStr
+    res = []
+    for line in bakeListStr.splitlines():
+        try:
+            s = line.split()
+            if s[0].startswith('*'):
+                if 'default' in line: 
+                    res.insert(0, s[1])
+                else:
+                    res.append(s[1]) # LibConfig is one word, cut `*` and (default)
+        except:
+            pass
+
+    vim.command('let s:bake_current_config_list = "{}"'.format("\n".join(res)))
+    return None
+    
 endpython
+
+fun! BakeGetArgs()
+    return s:bake_make_cmd . " " . g:bake_custom_args . " " . s:bake_args 
+endfun
 
 fun! BakeBuildThis()
     py3 BakeGetCurrentLib(vim.eval('expand("<cword>")'))
-    let cmd = "make " . g:bake_args
+    let cmd = BakeGetArgs()
     return ':'.cmd
 endfun
 
 fun! BakeBuildUnitTest()
     py3 BakeGetCurrentUnitTest("googletest")
-    let cmd = "make " . g:bake_args
-    return ':'.cmd
-endfun
-
-fun! BakeBuildLib(lib)
-    py3 BakeGetCurrentUnitTest("googletest")
-    let cmd = "make " . g:bake_args
+    let cmd = s:bake_make_cmd . s:bake_args . " " . g:bake_custom_args
     return ':'.cmd
 endfun
 
 fun! BakeBuildLast() abort
-    if !exists('g:bake_args')
+    if !exists('s:bake_args')
         py3 BakeGetCurrentUnitTest("")
     endif
-    let cmd = "make " . g:bake_args
+    " let cmd = s:bake_make_cmd . s:bake_args . " " . g:bake_custom_args
+    let cmd = BakeGetArgs()
     return ':'.cmd
 endfun
 
 fun! BakeUpdatePath() abort
-    "let s:bake_incs_and_defs_json = system("bake --incs-and-defs=json " . g:bake_args)
-    let g:bake_incs_and_defs_json = tempname()
+    "let s:bake_incs_and_defs_json = system("bake --incs-and-defs=json " . s:bake_args)
+    let s:bake_incs_and_defs_json = tempname()
     try
-        let s:bake_result = system("bake --incs-and-defs=json " . g:bake_args . " > " . g:bake_incs_and_defs_json)
-        if filereadable(g:bake_incs_and_defs_json)
-            py3 BakeGetIncludes(vim.eval('g:bake_incs_and_defs_json'))
-            let &path = g:bake_includes
+        let s:bake_result = system("bake --incs-and-defs=json " . s:bake_args . " " . g:bake_custom_args . " > " . s:bake_incs_and_defs_json)
+        if filereadable(s:bake_incs_and_defs_json)
+            py3 BakeGetIncludes(vim.eval('s:bake_incs_and_defs_json'))
+            let &path = s:bake_includes
         else
             echo "Error: bake didn't generate json: " . s:bake_result
         endif 
     finally
-        call delete(g:bake_incs_and_defs_json)
+        call delete(s:bake_incs_and_defs_json)
     endtry
     "let &path = execute("py3 BakeGetIncludes(vim.eval('s:bake_incs_and_defs_json'))")
 endfun
@@ -151,8 +170,24 @@ endfun
 nmap <expr> <C-F9> BakeBuildUnitTest()
 
 " Build with last used arguments
-" nmap <F9> :exe "make " . g:bake_args <cr>
+" nmap <F9> :exe "make " . s:bake_args <cr>
 nmap <expr> <F9> BakeBuildLast()
 nmap <expr> <F8> BakeBuildThis()
 
 nmap  <F2> :call BakeUpdatePath()<cr>
+
+fun! BakeCmd(args)
+    let s:bake_args = substitute(trim(a:args), g:bake_custom_args, "", "")
+    echo (BakeGetArgs())
+endfun
+
+command -nargs=1 -complete=custom,ListConfigs Bake call BakeCmd(<f-args>)
+
+fun ListConfigs(A,L,P)
+    py3 BakeFindCurrentProjectPath()
+    let s:bake_list = system("bake --list -m " . g:bake_cur_prj . " " . g:bake_custom_args)
+    py3 BakeGetListConfigs(vim.eval('s:bake_list'))
+    "return "sample"
+    return s:bake_current_config_list
+endfun
+
