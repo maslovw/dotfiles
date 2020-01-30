@@ -1,7 +1,7 @@
 " set ff=dos
 "disable netrw
-"let g:loaded_netrw       = 1
-"let g:loaded_netrwPlugin = 1
+let g:loaded_netrw       = 1
+let g:loaded_netrwPlugin = 1
 
 call plug#begin('~/dotfiles/nvim/plugged')
 Plug 'vim-airline/vim-airline'
@@ -21,8 +21,11 @@ Plug 'tpope/vim-dispatch'
 Plug 'iamcco/markdown-preview.nvim'
 call plug#end()
 
-source $MYVIMRC/../esr.vim
-source $MYVIMRC/../bake.vim
+let s:vimrc_path = expand('<sfile>:p:h')
+
+exec "source " . s:vimrc_path . "/esr.vim"
+exec "source " . s:vimrc_path . "/bake.vim"
+
 
 let mapleader = ","
 " Key maps
@@ -241,7 +244,8 @@ fun! Start()
     " Now we can just write to the buffer, whatever you want.
     "call append('$', "")
     "call append('$', "Open notes")
-    :0r $MYVIMRC/../start.txt
+    ":0r $MYVIMRC/../start.txt
+    exec ":0r " . s:vimrc_path . "/start.txt"
     " for line in split(system('fortune -a'), '\n')
     "    call append('$', '        ' . l:line)
     "endfor
