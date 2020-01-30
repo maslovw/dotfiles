@@ -1,5 +1,6 @@
 inoremap <silent> <S-Insert> <C-R>+
 
+
 GuiPopupmenu 0
 
 let s:fontsize = 12
@@ -19,3 +20,5 @@ set guioptions-=T
 set guioptions-=e
 set t_Co=256
 set guitablabel=%M\ %t
+" set! guifont=JetBrains\ Mono
+GuiFont! JetBrains\ Mono
