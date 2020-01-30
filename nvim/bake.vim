@@ -34,8 +34,8 @@ if !has("python3")
 endif
 
 " Detect if Dispatch plugin installed to use :Make
-autocmd VimEnter * if exists(':Make') == 2 | let s:bake_make_cmd = "Bake " | else | let s:bake_make_cmd = "Bake " | endif
-" autocmd VimEnter * if exists(':Make') == 2 | let s:bake_make_cmd = "Make " | else | let s:bake_make_cmd = "make " | endif
+" autocmd VimEnter * if exists(':Make') == 2 | let s:bake_make_cmd = "Bake " | else | let s:bake_make_cmd = "Bake " | endif
+autocmd VimEnter * if exists(':Make') == 2 | let s:bake_make_cmd = "Make " | else | let s:bake_make_cmd = "make " | endif
 
 
 let g:bake_custom_args = ""
@@ -89,20 +89,24 @@ def _call_bake(args):
 
 
 def BakeGetIncludes(json_file_name):
-    j = json.load(open(json_file_name, "r"))
-    incs = set()
-    for lib,fields in j.items():
-        for field, items in fields.items():
-            if field == 'includes':
-                incs.update(items)
-    if len(incs) == 0: 
-        return ""
-    s = ",".join(incs)
-    s.strip()
-    s.replace(' ', '\ ')
-    s.replace('/', '\\ ')
-    vim.command('let s:bake_includes = "{}"'.format(s))
-    return s
+        #try:
+        j = json.load(open(json_file_name, "r"))
+        incs = set()
+        for lib,fields in j.items():
+            for field, items in fields.items():
+                if field == 'includes':
+                    incs.update(items)
+        if len(incs) == 0: 
+            return ""
+        s = ",".join(incs)
+        s.strip()
+        s.replace(' ', '\ ')
+        s.replace('/', '\\ ')
+        vim.command('let g:bake_includes = "{}"'.format(s))
+        return s
+        # except Exception as e:
+        print("Py exception (BakeGetIncludes)", e)
+        return None
 
 # bakeListStr - output of `bake --list`
 def BakeGetListConfigs(bakeListStr):
@@ -126,7 +130,7 @@ def BakeGetListConfigs(bakeListStr):
 endpython
 
 fun! BakeGetArgs()
-    return s:bake_make_cmd . " " . g:bake_custom_args . " " . s:bake_args 
+    return "Bake " . g:bake_custom_args . " " . s:bake_args 
 endfun
 
 fun! BakeBuildThis()
@@ -137,7 +141,7 @@ endfun
 
 fun! BakeBuildUnitTest()
     py3 BakeGetCurrentUnitTest("googletest")
-    let cmd = s:bake_make_cmd . s:bake_args . " " . g:bake_custom_args
+    let cmd = BakeGetArgs()
     return ':'.cmd
 endfun
 
@@ -145,7 +149,6 @@ fun! BakeBuildLast() abort
     if !exists('s:bake_args')
         py3 BakeGetCurrentUnitTest("")
     endif
-    " let cmd = s:bake_make_cmd . s:bake_args . " " . g:bake_custom_args
     let cmd = BakeGetArgs()
     return ':'.cmd
 endfun
@@ -157,7 +160,7 @@ fun! BakeUpdatePath() abort
         let s:bake_result = system("bake --incs-and-defs=json " . s:bake_args . " " . g:bake_custom_args . " > " . s:bake_incs_and_defs_json)
         if filereadable(s:bake_incs_and_defs_json)
             py3 BakeGetIncludes(vim.eval('s:bake_incs_and_defs_json'))
-            let &path = s:bake_includes
+            let &path = g:bake_includes
         else
             echo "Error: bake didn't generate json: " . s:bake_result
         endif 
@@ -178,7 +181,8 @@ nmap  <F2> :call BakeUpdatePath()<cr>
 
 fun! BakeCmd(args)
     let s:bake_args = substitute(trim(a:args), g:bake_custom_args, "", "")
-    echo (BakeGetArgs())
+    "execute (BakeGetArgs())
+    execute( s:bake_make_cmd . g:bake_custom_args . " " . s:bake_args )
 endfun
 
 command -nargs=1 -complete=custom,ListConfigs Bake call BakeCmd(<f-args>)
