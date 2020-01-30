@@ -1,7 +1,7 @@
 " set ff=dos
 "disable netrw
-let g:loaded_netrw       = 1
-let g:loaded_netrwPlugin = 1
+"let g:loaded_netrw       = 1
+"let g:loaded_netrwPlugin = 1
 
 call plug#begin('~/dotfiles/nvim/plugged')
 Plug 'vim-airline/vim-airline'
@@ -218,6 +218,25 @@ if has("win16") || has("win32")
     :command! TCi Dispatch! TortoiseGitProc.exe /command:commit
 endif
 
+
+
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Start Page routine"""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+fun! Open_item()
+    let l:item = expand('<cfile>')
+    if isdirectory(l:item)
+        exec ":cd " . l:item
+        enew
+        NERDTree
+    else
+        exec ":e " . l:item 
+        NERDTreeFind
+        exec (':wincmd l' )
+    endif
+endfun
 " start page
 fun! Start()
     " Don't run if: we have commandline arguments, we don't have an empty
@@ -237,7 +256,6 @@ fun! Start()
         \ nocursorcolumn
         \ nocursorline
         \ nolist
-        \ nonumber
         \ noswapfile
         \ norelativenumber
 
@@ -257,8 +275,20 @@ fun! Start()
     nnoremap <buffer><silent> e :enew<CR>
     nnoremap <buffer><silent> i :enew <bar> startinsert<CR>
     "nnoremap <buffer><silent> o :enew <bar> startinsert<CR>
-    nnoremap <buffer><silent> o :cd <cfile> <bar> :enew <bar> :NERDTree<CR>
-    nnoremap <buffer><silent> <Enter> :cd <cfile> <bar> :enew <bar> :NERDTree <CR>
+    "nnoremap <buffer><silent> o :cd <cfile> <bar> :enew <bar> :NERDTree<CR>
+    nnoremap <buffer><silent> o :call Open_item()<CR>
+    nnoremap <buffer><silent> <Enter> :call Open_item()<CR>
+
+    nnoremap <buffer><silent> g1 1gg :call Open_item()<CR>
+    nnoremap <buffer><silent> g2 2gg :call Open_item()<CR>
+    nnoremap <buffer><silent> g3 3gg :call Open_item()<CR>
+    nnoremap <buffer><silent> g4 4gg :call Open_item()<CR>
+    nnoremap <buffer><silent> g5 5gg :call Open_item()<CR>
+    nnoremap <buffer><silent> g6 6gg :call Open_item()<CR>
+    nnoremap <buffer><silent> g7 7gg :call Open_item()<CR>
+    nnoremap <buffer><silent> g8 8gg :call Open_item()<CR>
+    nnoremap <buffer><silent> g9 8gg :call Open_item()<CR>
+
 endfun
 
 " Run after "doing all the startup stuff"

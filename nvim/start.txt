@@ -4,5 +4,4 @@ c:\work\audi\cgw3\gen35\
 c:\work\audi\cgw3\gen34\
 c:\work\doc\notes\
 
-doc/notes
-
+$MYVIMRC
