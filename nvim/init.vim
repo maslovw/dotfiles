@@ -92,6 +92,12 @@ nnoremap <silent> <CR> :noh<CR><CR>
 cnoremap <C-N> <UP>
 cnoremap <C-P> <Down>
 
+" folding
+" set foldmethod=syntax
+set foldmethod=marker
+set foldmarker={,}
+set foldlevel=1
+set nofen " zN to enable
 
 set listchars=eol:¬,tab:>·,trail:~,extends:>,precedes:<,space:·
 set list
