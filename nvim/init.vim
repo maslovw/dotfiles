@@ -2,6 +2,7 @@
 "disable netrw
 "let g:loaded_netrw       = 1
 "let g:loaded_netrwPlugin = 1
+let g:loaded_ctrlp = 1
 
 call plug#begin('~/dotfiles/nvim/plugged')
 Plug 'vim-airline/vim-airline'
@@ -19,12 +20,20 @@ Plug 'drmikehenry/vim-headerguard'
 Plug 'altercation/vim-colors-solarized'
 Plug 'tpope/vim-dispatch'
 Plug 'iamcco/markdown-preview.nvim'
+Plug 'junegunn/fzf', { 'do': './install --bin' }
+Plug 'junegunn/fzf'
+Plug 'junegunn/fzf.vim' 
+" Highlight many 
+Plug 'inkarkat/vim-ingo-library'
+Plug 'inkarkat/vim-mark'
+Plug 'NLKNguyen/papercolor-theme'
+Plug 'terryma/vim-multiple-cursors'
 call plug#end()
 
-let s:vimrc_path = expand('<sfile>:p:h')
+let g:vimrc_path = expand('<sfile>:p:h')
 
-exec "source " . s:vimrc_path . "/esr.vim"
-exec "source " . s:vimrc_path . "/bake.vim"
+exec "source " . g:vimrc_path . "/esr.vim"
+exec "source " . g:vimrc_path . "/bake.vim"
 
 
 let mapleader = ","
@@ -71,13 +80,26 @@ nnoremap <M-Down> <C-W>-
 nnoremap <M-Left> <C-W><
 nnoremap <M-Right> <C-W>>
 
-nnoremap <silent> <F12> :NERDTree<CR>
+nnoremap <silent> <F12> :NERDTreeToggle<CR>
 nnoremap <silent> <C-F12> :NERDTreeFind<CR>
-nnoremap <silent> <C-Tab> :tabNext<CR>
+nnoremap <silent> <C-Tab> :tabnext<CR>
+nnoremap <silent> <C-S-Tab> :tabNext<CR>
 nnoremap <silent> <C-T> :tabnew<CR>
 
-" Git 
-nnoremap <silent> <Leader>fF :Ggrep! <cword> ** <bar> :copen <CR>
+" open vertical split from quickfix window 
+autocmd! FileType qf nnoremap <buffer> <leader><Enter> <C-w><Enter><C-w>L
+
+nnoremap <Leader>p :FZF <CR>
+"nnoremap <C-P> :call fzf#run(fzf#wrap({'source': 'git ls-files', 'options': ['-i', ' -- :(exclude)*cpp']})) <CR>
+nnoremap <C-P> :call fzf#run(fzf#wrap({'source': 'rg -S -g !test/ --files'})) <CR>
+command! -bang -nargs=* Rg  call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case -g \"!test\/\" -g \"!mock\/\" -g !tags ".shellescape(<q-args>), 1, <bang>0)
+nnoremap <Leader>ff :Rg <CR>
+"nnoremap <Leader>ff  :call fzf#run(fzf#wrap({'source': 'rg -S -g !test/'})) <CR>
+"nnoremap <Leader>ff  :call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case ".shellescape(<q-args>), 1, <bang>0)'
+"nnoremap <Leader>ff  :call fzf#run(fzf#wrap({'source': 'rg -e'})) <CR>
+" Git
+nnoremap <Leader>fF :Ggrep! <cword> ** ':(exclude)*\/test\/*' ':(exclude)*\/mock\/*' <bar> :copen <CR>
+nnoremap <Leader>fG :Ggrep! --no-exclude-standard --untracked <cword> ** <bar> :copen <CR>
 
 " save
 nmap <C-S> :update<CR>
@@ -94,12 +116,18 @@ cnoremap <C-P> <Down>
 
 " folding
 " set foldmethod=syntax
+"
 set foldmethod=marker
 set foldmarker={,}
 set foldlevel=1
 set nofen " zN to enable
 
-set listchars=eol:¬,tab:>·,trail:~,extends:>,precedes:<,space:·
+" cursor briefely jumps to the matching brace
+set showmatch
+set matchtime=3
+
+" set listchars=eol:¬,tab:>·,trail:~,extends:>,precedes:<,space:·
+set listchars=eol:¬,tab:>·,trail:~,precedes:<,space:·
 set list
 
 set nocompatible
@@ -116,15 +144,24 @@ set tabstop=4 shiftwidth=4 expandtab
 set hidden
 set nowrap
 
+" don't jump to the beginning of the file after last search 
+set nowrapscan
+
+highlight multiple_cursors_cursor term=reverse cterm=reverse gui=reverse
+highlight link multiple_cursors_visual Visual
 " automatically scroll at the end/beginning of the screen
 set scrolloff=3
 
+if has("win32")
+    set rtp+=~\\bin
+endif
 
 " temporary files
 if has("win32")
     set backupdir=c:\\temp\\vim\\backup\\
     set directory=c:\\temp\\vim\\swp\\
     set undodir=c:\\temp\\vim\\undo\\
+    let g:fzf_history_dir = 'c:\\temp\\vim\\fzf_history\\'
 else
     set backupdir=.backup/,~/.backup/,/tmp//
     set directory=.swp/,~/.swp/,/tmp//
@@ -160,14 +197,16 @@ set cursorline
 
 set title
 
+" show title as two last folders in CWD 
 augroup dirchange
     autocmd!
-    autocmd DirChanged * let &titlestring=v:event['cwd']
+    autocmd DirChanged * let &titlestring=join(split(v:event['cwd'], '\\')[-2:], '/')
 augroup END
 
-set wildignore+=*\\tmp\\*,*.swp,*.zip,*.exe,*.stackdump,*.o,*.pyc " Windows
+" *\\tmp\\*,
+set wildignore+=*.swp,*.zip,*.exe,*.stackdump,*.o,*.pyc 
 if has("win16") || has("win32")
-    set wildignore+=.git\*,.hg\*,.svn\*
+    set wildignore+=.git\\*,.hg\\*,.svn\\*
 else
     set wildignore+=*/.git/*,*/.hg/*,*/.svn/*,*/.DS_Store
 endif
@@ -202,13 +241,20 @@ if has("autocmd")
     autocmd BufWritePre *.txt,*.js,*.py,*.wiki,*.sh,*.coffee,*.cpp,*.h :call CleanExtraSpaces()
 endif
 
-let g:bake_custom_args = "--time -r"
+let g:bake_custom_args = "--time -r -j8"
 
 
 " Open PDF as text using `pdftotxt` tool
 :command! -complete=file -nargs=1 Rpdf :r !pdftotext -nopgbrk <q-args> -
 :command! -complete=file -nargs=1 Rpdf :r !pdftotext -nopgbrk <q-args> - |fmt -csw78
 
+
+" :%s/\s\+$//e
+fun! TrimWhitespace()
+    let l:save = winsaveview()
+    keeppatterns %s/\s\+$//e
+    call winrestview(l:save)
+endfun
 
 " HeadGuard customization
 
@@ -224,79 +270,72 @@ if has("win16") || has("win32")
     :command! TCi Dispatch! TortoiseGitProc.exe /command:commit
 endif
 
+"""" FZF
+
+command! -bang -nargs=* FGrep
+  \ call fzf#vim#grep(
+  \   'git grep --line-number '.shellescape(<q-args>), 0,
+  \   fzf#vim#with_preview({'dir': systemlist('git rev-parse --show-toplevel')[0]}), <bang>0)
+
+" Switch between Source and Header
+command! -bang -nargs=? -complete=dir SwitchSourceHeader
+  \ call fzf#vim#gitfiles(
+  \   <q-args>, 
+  \   {'options': [
+  \         '--info=inline',
+  \         '--query', substitute(
+  \                      substitute(
+  \                        substitute(
+  \                          expand("%:r"), 
+  \                          "src", "",""), 
+  \                      "include", "",""),
+  \                    "\\", "/", "g") . " .h | .cpp | .hpp | .c",
+  \         '--preview', 'head -n 30 {}'
+  \   ]}, <bang>0)
 
 
+" Mapping selecting mappings
+nmap <leader><tab> <plug>(fzf-maps-n)
+xmap <leader><tab> <plug>(fzf-maps-x)
+omap <leader><tab> <plug>(fzf-maps-o)
 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Insert mode completion
+imap <c-x><c-k> <plug>(fzf-complete-word)
+imap <c-x><c-f> <plug>(fzf-complete-path)
+imap <c-x><c-j> <plug>(fzf-complete-file-ag)
+" imap <c-x><c-l> <plug>(fzf-complete-line)
+
+inoremap <expr> <c-x><c-l> fzf#vim#complete(fzf#wrap({
+  \ 'prefix': '^.*$',
+  \ 'source': 'rg -n ^ --color always',
+  \ 'options': '--ansi --delimiter : --nth 3..',
+  \ 'reducer': { lines -> join(split(lines[0], ':\zs')[2:], '') }}))
+
+nnoremap <C-F2> :SwitchSourceHeader <CR>
+
+"nnoremap <C-P> :call fzf#run(fzf#wrap({'source': 'git ls-files', 'options': '-i'})) <CR>
+nnoremap <C-F3> :call fzf#run(fzf#wrap({'source': 'git ls-files', 'options': ['-i', '--query', expand('<cword>')]})) <CR>
+"""" >> FZF
+
+" HEX / BIN viewer
+nnoremap <F4> :!xxd <CR>
+" vim -b : edit binary using xxd-format!
+augroup Binary
+  au!
+  au BufReadPre  *.bin let &bin=1
+  au BufReadPost *.bin if &bin | %!xxd
+  au BufReadPost *.bin set ft=xxd | endif
+  au BufWritePre *.bin if &bin | %!xxd -r
+  au BufWritePre *.bin endif
+  au BufWritePost *.bin if &bin | %!xxd
+  au BufWritePost *.bin set nomod | endif
+augroup END
+
+
+" if ! exists('g:mwPalettes')	" (Optional) guard if the plugin isn't properly installed.
+" finish
+" endif
+
+exec "source " . g:vimrc_path . "/log_helper.vim"
 " Start Page routine"""""""""""""""""""""""""""""""""""""""""""""""""""""""
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-fun! Open_item()
-    let l:item = expand('<cfile>')
-    if isdirectory(l:item)
-        exec ":cd " . l:item
-        enew
-        NERDTree
-    else
-        exec ":e " . l:item 
-        NERDTreeFind
-        exec (':wincmd l' )
-    endif
-endfun
-" start page
-fun! Start()
-    " Don't run if: we have commandline arguments, we don't have an empty
-    " buffer, if we've not invoked as vim or gvim, or if we'e start in insert mode
-    if argc() || line2byte('$') != -1 || v:progname !~? '^[-gmnq]\=vim\=x\=\%[\.exe]$' || &insertmode
-        return
-    endif
-
-    " Start a new buffer ...
-    enew
-
-    " ... and set some options for it
-    setlocal
-        \ bufhidden=wipe
-        \ buftype=nofile
-        \ nobuflisted
-        \ nocursorcolumn
-        \ nocursorline
-        \ nolist
-        \ noswapfile
-        \ norelativenumber
-
-    " Now we can just write to the buffer, whatever you want.
-    "call append('$', "")
-    "call append('$', "Open notes")
-    ":0r $MYVIMRC/../start.txt
-    exec ":0r " . s:vimrc_path . "/start.txt"
-    " for line in split(system('fortune -a'), '\n')
-    "    call append('$', '        ' . l:line)
-    "endfor
-
-    " No modifications to this buffer
-    setlocal nomodifiable nomodified
-
-    " When we go to insert mode start a new buffer, and start insert
-    nnoremap <buffer><silent> e :enew<CR>
-    nnoremap <buffer><silent> i :enew <bar> startinsert<CR>
-    "nnoremap <buffer><silent> o :enew <bar> startinsert<CR>
-    "nnoremap <buffer><silent> o :cd <cfile> <bar> :enew <bar> :NERDTree<CR>
-    nnoremap <buffer><silent> o :call Open_item()<CR>
-    nnoremap <buffer><silent> <Enter> :call Open_item()<CR>
-
-    nnoremap <buffer><silent> g1 1gg :call Open_item()<CR>
-    nnoremap <buffer><silent> g2 2gg :call Open_item()<CR>
-    nnoremap <buffer><silent> g3 3gg :call Open_item()<CR>
-    nnoremap <buffer><silent> g4 4gg :call Open_item()<CR>
-    nnoremap <buffer><silent> g5 5gg :call Open_item()<CR>
-    nnoremap <buffer><silent> g6 6gg :call Open_item()<CR>
-    nnoremap <buffer><silent> g7 7gg :call Open_item()<CR>
-    nnoremap <buffer><silent> g8 8gg :call Open_item()<CR>
-    nnoremap <buffer><silent> g9 8gg :call Open_item()<CR>
-
-endfun
-
-" Run after "doing all the startup stuff"
-autocmd VimEnter * call Start()
-
+exec "source " . g:vimrc_path . "/start.vim"

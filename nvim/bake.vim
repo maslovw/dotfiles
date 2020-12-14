@@ -71,7 +71,7 @@ def BakeGetCurrentLib(libConfig=None, options=None):
     PM = BakeFindCurrentProjectPath()
     if PM is None: 
         return 1
-    cmd = "--abs-paths -r -m {} ".format(PM.replace(os.sep, posixpath.sep))
+    cmd = "--abs-paths -m {} ".format(PM.replace(os.sep, posixpath.sep))
     if libConfig:
         cmd += "-b {} ".format(libConfig)
     if options: 
