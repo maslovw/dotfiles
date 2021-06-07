@@ -2,6 +2,12 @@
 "disable netrw
 "let g:loaded_netrw       = 1
 "let g:loaded_netrwPlugin = 1
+set nocompatible
+" Some helpers variables to find out where we're executing vim
+let s:darwin = has('mac')
+let s:windows = has("win32") || has("dos32") || has("win16") || has("dos16") || has("win95") || has("win64")
+let s:on_gui = has('gui_running')
+
 let g:loaded_ctrlp = 1
 
 call plug#begin('~/dotfiles/nvim/plugged')
@@ -46,9 +52,18 @@ try
 endtry
 
 
-" folding
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Text Formatting/Layout
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+set tabstop=4 shiftwidth=4 expandtab
+set cinwords+=try,catch
+set shiftround " When at 3 spaces and I hit >>, go to 4, not 5.
+
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Text Formatting/Layout
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " set foldmethod=syntax
-"
 set foldmethod=marker
 set foldmarker={,}
 set foldlevel=1
@@ -62,7 +77,6 @@ set matchtime=3
 set listchars=eol:¬,tab:>·,trail:~,precedes:<,space:·
 set list
 
-set nocompatible
 " configs
 set wildmenu
 set relativenumber
@@ -72,7 +86,6 @@ set ignorecase
 set hlsearch
 set incsearch
 highlight ColorColumn ctermbg=0 guibg=lightgrey
-set tabstop=4 shiftwidth=4 expandtab
 set hidden
 set nowrap
 
@@ -84,12 +97,9 @@ highlight link multiple_cursors_visual Visual
 " automatically scroll at the end/beginning of the screen
 set scrolloff=3
 
-if has("win32")
-    set rtp+=~\\bin
-endif
-
 " temporary files
-if has("win32")
+if s:windows
+    set rtp+=~\\bin
     set backupdir=c:\\temp\\vim\\backup\\
     set directory=c:\\temp\\vim\\swp\\
     set undodir=c:\\temp\\vim\\undo\\
@@ -125,6 +135,7 @@ endif
 let g:airline_theme='one'
 colorscheme one
 set background=dark
+"set background=light
 set cursorline
 
 set title
@@ -137,7 +148,7 @@ augroup END
 
 " *\\tmp\\*,
 set wildignore+=*.swp,*.zip,*.exe,*.stackdump,*.o,*.pyc 
-if has("win16") || has("win32")
+if s:windows
     set wildignore+=.git\\*,.hg\\*,.svn\\*
 else
     set wildignore+=*/.git/*,*/.hg/*,*/.svn/*,*/.DS_Store
@@ -148,11 +159,6 @@ let g:ctrlp_clear_cache_on_exit = 0
 let g:ctrlp_working_path_mode = 'rwa'
 let g:ctrlp_by_filename = 0
 
-
-" let g:ctrlp_mruf_exclude = {
-"   \ 'dir':  '\v[\/]\.(git|hg|svn|rim|bake)$',
-"   \ 'file': '\v\.(exe|so|dll|a|stackdump|cmdline|d|o|bake)$',
-"   \ }
 
 let g:ctrlp_custom_ignore = {
   \ 'dir':  '\v[\/]\.(git|hg|svn|rim|bake)$',
@@ -170,7 +176,7 @@ fun! CleanExtraSpaces()
 endfun
 
 if has("autocmd")
-    autocmd BufWritePre *.txt,*.js,*.py,*.wiki,*.sh,*.coffee,*.cpp,*.h :call CleanExtraSpaces()
+    autocmd BufWritePre *.md,*.txt,*.js,*.py,*.wiki,*.sh,*.coffee,*.cpp,*.h :call CleanExtraSpaces()
 endif
 
 let g:bake_custom_args = "--time -r -j8"
@@ -189,13 +195,12 @@ fun! TrimWhitespace()
 endfun
 
 " HeadGuard customization
-
 function! g:HeaderguardName()
     return toupper(expand('%:.:gs/[^0-9a-zA-Z_]/_/g'))
 endfunction
 
 " working with TortoiseGit
-if has("win16") || has("win32")
+if s:windows
     :command! TLog Dispatch! TortoiseGitProc.exe /command:log 
     :command! TLogp Dispatch! TortoiseGitProc.exe /command:log /path:%:p:h
     :command! TLogf Dispatch! TortoiseGitProc.exe /command:log /path:%:p
@@ -210,7 +215,7 @@ command! -bang -nargs=* FGrep
   \   fzf#vim#with_preview({'dir': systemlist('git rev-parse --show-toplevel')[0]}), <bang>0)
 
 " Switch between Source and Header
-command! -bang -nargs=? -complete=dir SwitchSourceHeader
+command! -bang -nargs=? -complete=dir FzfSwitchSourceHeader
   \ call fzf#vim#gitfiles(
   \   <q-args>, 
   \   {'options': [
@@ -221,10 +226,64 @@ command! -bang -nargs=? -complete=dir SwitchSourceHeader
   \                          expand("%:r"), 
   \                          "src", "",""), 
   \                      "include", "",""),
-  \                    "\\", "/", "g") . " .h | .cpp | .hpp | .c",
+  \                    "\\", "/", "g") . GetAlternateExtension(),
   \         '--preview', 'head -n 30 {}'
   \   ]}, <bang>0)
 
+
+function! IsHeader()
+    let header_extensions = ['h', 'hh', 'H', 'HH', 'hxx', 'HXX', 'hpp', 'HPP']
+    let is_header = (count(header_extensions, expand('%:e')) > 0)
+
+    if is_header
+        return 1
+    endif
+
+    return 0
+endfunction
+
+" Switch from header file to implementation file (and vice versa).
+function! SwitchSourceHeader()
+    let header_extensions = ['h', 'hpp',  'hh', 'H', 'HH', 'hxx', 'HXX', 'HPP']
+    let impl_extensions = ['cpp', 'c', 'mm', 'm', 'C', 'CC']
+    let filename = substitute( expand("%:r"), "\\", "/", "g") 
+
+    let filename = substitute(filename, "//", "/", "g") . "."
+    if IsHeader()
+        let filename = substitute(filename, "include", "src", "g")
+        if !HasReadableExtensionIn(filename,  impl_extensions)
+            exe 'FzfSwitchSourceHeader'
+        endif
+    else
+        let filename = substitute(filename, "src", "include", "g")
+        if !HasReadableExtensionIn(filename, header_extensions)
+            exe 'FzfSwitchSourceHeader'
+        endif
+    endif
+endfunction
+
+function! HasReadableExtensionIn(path, extensions)
+    for ext in a:extensions
+        if filereadable(a:path.ext)
+            exe 'e '.fnameescape(a:path.ext)
+            return 1
+        endif
+    endfor
+    return 0
+endfunction
+
+function! GetAlternateExtension()
+    let path = expand('%:p:r').'.'
+    "let header_extensions = ['h', 'hh', 'H', 'HH', 'hxx', 'HXX', 'hpp', 'HPP']
+    "let impl_extensions = ['m', 'mm', 'c', 'cpp', 'C', 'CC']
+    let is_header = IsHeader()
+
+    if !is_header
+        return " .h | .hpp "
+    endif
+
+    return " .cpp | .c"
+endfunction
 
 command! -bang -nargs=? -complete=dir FindFile
   \ call fzf#vim#gitfiles(
@@ -256,37 +315,6 @@ augroup Binary
 augroup END
 "
 
-function! DecAndHex(number)
-  let ns = '[.,;:''"<>(){}\[\]^_U]'      " number separators
-  if a:number =~? '^' . ns. '*[-+]\?\d\+' . ns . '*$'
-     "dec to hex
-     let dec = substitute(a:number, '[^0-9+-]*\([+-]\?\d\+\).*','\1','')
-     let old = @"
-     let @" = printf('0x%02X', dec)
-     execute "normal! viwp"
-     echo dec . printf('  ->  0x%X, 0b%08b', dec, dec)
-     let @" = old
- elseif a:number =~? '^\w*' . ns. '*\(0x\|#\)\(\x\+\)' . ns . '*$'
-     "hex to dec
-     let hex = substitute(a:number, '.\{-}\%\(0x\|#\)\(\x\+\).*','\1','')
-     let old = @"
-     let @" = printf('%d', eval('0x'.hex))
-     execute "normal! viwp"
-     echo '0x' . hex . printf('  ->  %d', eval('0x'.hex))
-     let @" = old
-  else
-     echo "NaN"
-  endif
-endfunction
-
-" if ! exists('g:mwPalettes')	" (Optional) guard if the plugin isn't properly installed.
-" finish
-" endif
-"
-"
-"
-"
-"
 " KEY MAPPING
 
 let mapleader = ","
@@ -368,20 +396,6 @@ vnoremap * y/\V<C-R>=escape(@",'/\')<CR><CR>
 
 "vnoremap <C-P> ""yi" :call fzf#run(fzf#wrap({'source': 'rg -S -g !test/ --files', 'options': '-q' . expand('<cword>')})) <CR> 
 
-function! s:get_visual_selection()
-    " Why is this not a built-in Vim script function?!
-    let [line_start, column_start] = getpos("'<")[1:2]
-    let [line_end, column_end] = getpos("'>")[1:2]
-    let lines = getline(line_start, line_end)
-    if len(lines) == 0
-        return ''
-    endif
-    let lines[-1] = lines[-1][: column_end - (&selection == 'inclusive' ? 1 : 2)]
-    let lines[0] = lines[0][column_start - 1:]
-    return join(lines, "\n")
-endfunction
-
-vnoremap <C-P> print(s:get_visual_selection())
 
 " save 
 nmap <C-S> :update<CR>
@@ -395,7 +409,7 @@ nnoremap <silent> <CR> :noh<CR><CR>
 
 cnoremap <C-N> <UP>
 cnoremap <C-P> <Down>
-nnoremap <C-F2> :SwitchSourceHeader <CR>
+nnoremap <C-F2> :call SwitchSourceHeader() <CR>
 nnoremap <F3> :FindFile <CR>
 
 nnoremap <C-F3> :call fzf#run(fzf#wrap({'source': 'git ls-files', 'options': ['-i', '--query', expand('<cword>')]})) <CR>
@@ -406,9 +420,47 @@ nnoremap <F4> :!xxd <CR>
 " change decimal and hex numbers under cursor
 nnoremap gn :call DecAndHex(expand("<cword>"))<CR>
 
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Helper functions
+"     These functions are used on some mappings.
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+function! s:get_visual_selection()
+    " Why is this not a built-in Vim script function?!
+    let [line_start, column_start] = getpos("'<")[1:2]
+    let [line_end, column_end] = getpos("'>")[1:2]
+    let lines = getline(line_start, line_end)
+    if len(lines) == 0
+        return ''
+    endif
+    let lines[-1] = lines[-1][: column_end - (&selection == 'inclusive' ? 1 : 2)]
+    let lines[0] = lines[0][column_start - 1:]
+    return join(lines, "\n")
+endfunction
 
 
-
+" change number under cursor hex<->dec
+function! DecAndHex(number)
+  let ns = '[.,;:''"<>(){}\[\]^_U]'      " number separators
+  if a:number =~? '^' . ns. '*[-+]\?\d\+' . ns . '*$'
+     "dec to hex
+     let dec = substitute(a:number, '[^0-9+-]*\([+-]\?\d\+\).*','\1','')
+     let old = @"
+     let @" = printf('0x%02X', dec)
+     execute "normal! viwp"
+     echo dec . printf('  ->  0x%X, 0b%08b', dec, dec)
+     let @" = old
+ elseif a:number =~? '^\w*' . ns. '*\(0x\|#\)\(\x\+\)' . ns . '*$'
+     "hex to dec
+     let hex = substitute(a:number, '.\{-}\%\(0x\|#\)\(\x\+\).*','\1','')
+     let old = @"
+     let @" = printf('%d', eval('0x'.hex))
+     execute "normal! viwp"
+     echo '0x' . hex . printf('  ->  %d', eval('0x'.hex))
+     let @" = old
+  else
+     echo "NaN"
+  endif
+endfunction
 " Loading extran .vim
 
 exec "source " . g:vimrc_path . "/log_helper.vim"
