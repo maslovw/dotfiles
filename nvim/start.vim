@@ -8,7 +8,7 @@ fun! Open_item()
     if isdirectory(l:item)
         exec ":cd " . l:item
         enew
-        " NERDTree
+        NERDTree
     else
         exec ":e " . l:item 
         " NERDTreeFind
@@ -70,4 +70,4 @@ fun! Start()
 endfun
 
 " Run after "doing all the startup stuff"
-autocmd VimEnter * call Start()
+autocmd VimEnter * call Start() 

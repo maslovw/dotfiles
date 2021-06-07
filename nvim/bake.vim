@@ -62,8 +62,9 @@ def _find_closest_project_meta(path):
 
 def BakeFindCurrentProjectPath():
     res = _find_closest_project_meta(vim.eval('expand("%:ph")'))
-    cur_project = res.replace(os.sep, posixpath.sep)
-    vim.command('let g:bake_cur_prj = "{}"'.format(cur_project))
+    if res is not None:
+        cur_project = res.replace(os.sep, posixpath.sep)
+        vim.command('let g:bake_cur_prj = "{}"'.format(cur_project))
     return res
 
 def BakeGetCurrentLib(libConfig=None, options=None):
@@ -147,7 +148,8 @@ endfun
 
 fun! BakeBuildLast() abort
     if !exists('s:bake_args')
-        py3 BakeGetCurrentUnitTest("")
+        " py3 BakeGetCurrentUnitTest("")
+        return ":Bake " . g:bake_custom_args 
     endif
     let cmd = BakeGetArgs()
     return ':'.cmd
@@ -180,7 +182,7 @@ nmap <expr> <F8> BakeBuildThis()
 nmap  <F2> :call BakeUpdatePath()<cr>
 
 fun! BakeCmd(args)
-    let s:bake_args = substitute(trim(a:args), g:bake_custom_args, "", "")
+    let s:bake_args = trim(substitute(trim(a:args), g:bake_custom_args, "", ""))
     "execute (BakeGetArgs())
     execute( s:bake_make_cmd . g:bake_custom_args . " " . s:bake_args )
 endfun

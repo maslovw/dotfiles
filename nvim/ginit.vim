@@ -27,3 +27,14 @@ set t_Co=256
 set guitablabel=%M\ %t
 " set! guifont=JetBrains\ Mono
 GuiFont! JetBrains\ Mono
+
+if !exists('s:ismaximised')
+    let s:ismaximised = 0
+endif
+function! MaximizeToggle()
+   let s:ismaximised = !s:ismaximised
+   call GuiWindowFullScreen(s:ismaximised)
+endfunction
+
+command Fullscreen call MaximizeToggle()
+nnoremap <silent> <a-enter> :Fullscreen <CR>

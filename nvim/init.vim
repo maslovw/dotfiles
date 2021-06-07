@@ -7,7 +7,6 @@ let g:loaded_ctrlp = 1
 call plug#begin('~/dotfiles/nvim/plugged')
 Plug 'vim-airline/vim-airline'
 Plug 'rakr/vim-one'
-Plug 'ctrlpvim/ctrlp.vim'
 Plug 'tpope/vim-fugitive'
 
 Plug 'scrooloose/nerdtree'
@@ -32,87 +31,20 @@ call plug#end()
 
 let g:vimrc_path = expand('<sfile>:p:h')
 
+"airline status line 
+
+"let g:airline_section_a = g:airline_section_b
+let g:airline_section_a = '%-0.10{getcwd()}'
+let g:airline_section_y = ''
+" 
+
 exec "source " . g:vimrc_path . "/esr.vim"
 exec "source " . g:vimrc_path . "/bake.vim"
 
+try
+    exec "source " . g:vimrc_path . "/projects/project_specific.vim"
+endtry
 
-let mapleader = ","
-" Key maps
-" remap jk to ESC
-inoremap jk <ESC>
-" paste from global buf
-nnoremap <S-Insert> "+p
-" copy from global buf
-vnoremap <C-Insert> "+y
-
-" copy relative path
-nnoremap yp :let @" = expand("%")<CR>
-" copy full path
-nnoremap yP :let @" = expand("%:p")<CR>
-" copy file name
-nnoremap yf :let @" = expand("%:t")<CR>
-
-" Smart way to move between windows
-nnoremap <C-j> <C-W>j
-nnoremap <C-k> <C-W>k
-nnoremap <C-h> <C-W>h
-nnoremap <C-l> <C-W>l
-
-" Move window to most *left, right...
-nnoremap <Leader>j <C-W>J
-nnoremap <Leader>k <C-W>K
-nnoremap <Leader>h <C-W>H
-nnoremap <Leader>l <C-W>L
-
-" jump to top window
-nnoremap <Leader>K <C-W>t
-nnoremap <Leader>J <C-W>b
-nnoremap <Leader>H 10<C-W>h<C-W>t
-nnoremap <Leader>L 10<C-W>l
-
-"go to previously accessed window 
-nnoremap <M-Left> <C-W>p
-nnoremap <M-Right> <C-W>n
-
-" resize splits
-nnoremap <M-Up> <C-W>+
-nnoremap <M-Down> <C-W>-
-nnoremap <M-Left> <C-W><
-nnoremap <M-Right> <C-W>>
-
-nnoremap <silent> <F12> :NERDTreeToggle<CR>
-nnoremap <silent> <C-F12> :NERDTreeFind<CR>
-nnoremap <silent> <C-Tab> :tabnext<CR>
-nnoremap <silent> <C-S-Tab> :tabNext<CR>
-nnoremap <silent> <C-T> :tabnew<CR>
-
-" open vertical split from quickfix window 
-autocmd! FileType qf nnoremap <buffer> <leader><Enter> <C-w><Enter><C-w>L
-
-nnoremap <Leader>p :FZF <CR>
-"nnoremap <C-P> :call fzf#run(fzf#wrap({'source': 'git ls-files', 'options': ['-i', ' -- :(exclude)*cpp']})) <CR>
-nnoremap <C-P> :call fzf#run(fzf#wrap({'source': 'rg -S -g !test/ --files'})) <CR>
-command! -bang -nargs=* Rg  call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case -g \"!test\/\" -g \"!mock\/\" -g !tags ".shellescape(<q-args>), 1, <bang>0)
-nnoremap <Leader>ff :Rg <CR>
-"nnoremap <Leader>ff  :call fzf#run(fzf#wrap({'source': 'rg -S -g !test/'})) <CR>
-"nnoremap <Leader>ff  :call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case ".shellescape(<q-args>), 1, <bang>0)'
-"nnoremap <Leader>ff  :call fzf#run(fzf#wrap({'source': 'rg -e'})) <CR>
-" Git
-nnoremap <Leader>fF :Ggrep! <cword> ** ':(exclude)*\/test\/*' ':(exclude)*\/mock\/*' <bar> :copen <CR>
-nnoremap <Leader>fG :Ggrep! --no-exclude-standard --untracked <cword> ** <bar> :copen <CR>
-
-" save
-nmap <C-S> :update<CR>
-vnoremap <C-S> <C-C>:update<CR>
-inoremap <C-S> <C-O>:update<CR><ESC>
-
-inoremap <C-Space> <C-x><C-n>
-
-" remove hightlight on next enter after search
-nnoremap <silent> <CR> :noh<CR><CR>
-
-cnoremap <C-N> <UP>
-cnoremap <C-P> <Down>
 
 " folding
 " set foldmethod=syntax
@@ -294,31 +226,23 @@ command! -bang -nargs=? -complete=dir SwitchSourceHeader
   \   ]}, <bang>0)
 
 
-" Mapping selecting mappings
-nmap <leader><tab> <plug>(fzf-maps-n)
-xmap <leader><tab> <plug>(fzf-maps-x)
-omap <leader><tab> <plug>(fzf-maps-o)
+command! -bang -nargs=? -complete=dir FindFile
+  \ call fzf#vim#gitfiles(
+  \   <q-args>, 
+  \   {'options': [
+  \         '--info=inline',
+  \         '--query', "'" . substitute(
+  \                        substitute(
+  \                        substitute(
+  \                        substitute(
+  \                          expand("<cWORD>"), 
+  \                      "<", "","g"),
+  \                      ">", "","g"),
+  \                      "\"", "","g"),
+  \                    "\\", "/", "g"),
+  \         '--preview', 'head -n 30 {}'
+  \   ]}, <bang>0)
 
-" Insert mode completion
-imap <c-x><c-k> <plug>(fzf-complete-word)
-imap <c-x><c-f> <plug>(fzf-complete-path)
-imap <c-x><c-j> <plug>(fzf-complete-file-ag)
-" imap <c-x><c-l> <plug>(fzf-complete-line)
-
-inoremap <expr> <c-x><c-l> fzf#vim#complete(fzf#wrap({
-  \ 'prefix': '^.*$',
-  \ 'source': 'rg -n ^ --color always',
-  \ 'options': '--ansi --delimiter : --nth 3..',
-  \ 'reducer': { lines -> join(split(lines[0], ':\zs')[2:], '') }}))
-
-nnoremap <C-F2> :SwitchSourceHeader <CR>
-
-"nnoremap <C-P> :call fzf#run(fzf#wrap({'source': 'git ls-files', 'options': '-i'})) <CR>
-nnoremap <C-F3> :call fzf#run(fzf#wrap({'source': 'git ls-files', 'options': ['-i', '--query', expand('<cword>')]})) <CR>
-"""" >> FZF
-
-" HEX / BIN viewer
-nnoremap <F4> :!xxd <CR>
 " vim -b : edit binary using xxd-format!
 augroup Binary
   au!
@@ -330,11 +254,162 @@ augroup Binary
   au BufWritePost *.bin if &bin | %!xxd
   au BufWritePost *.bin set nomod | endif
 augroup END
+"
 
+function! DecAndHex(number)
+  let ns = '[.,;:''"<>(){}\[\]^_U]'      " number separators
+  if a:number =~? '^' . ns. '*[-+]\?\d\+' . ns . '*$'
+     "dec to hex
+     let dec = substitute(a:number, '[^0-9+-]*\([+-]\?\d\+\).*','\1','')
+     let old = @"
+     let @" = printf('0x%02X', dec)
+     execute "normal! viwp"
+     echo dec . printf('  ->  0x%X, 0b%08b', dec, dec)
+     let @" = old
+ elseif a:number =~? '^\w*' . ns. '*\(0x\|#\)\(\x\+\)' . ns . '*$'
+     "hex to dec
+     let hex = substitute(a:number, '.\{-}\%\(0x\|#\)\(\x\+\).*','\1','')
+     let old = @"
+     let @" = printf('%d', eval('0x'.hex))
+     execute "normal! viwp"
+     echo '0x' . hex . printf('  ->  %d', eval('0x'.hex))
+     let @" = old
+  else
+     echo "NaN"
+  endif
+endfunction
 
 " if ! exists('g:mwPalettes')	" (Optional) guard if the plugin isn't properly installed.
 " finish
 " endif
+"
+"
+"
+"
+"
+" KEY MAPPING
+
+let mapleader = ","
+" Key maps
+" remap jk to ESC
+inoremap jk <ESC>
+" paste from global buf
+nnoremap <S-Insert> "+p
+" copy from global buf
+vnoremap <C-Insert> "+y
+
+" copy relative path
+nnoremap yp :let @" = substitute(expand("%"), '\\', '/', 'g')<CR>
+" copy full path
+nnoremap yP :let @" = substitute(expand("%:p"), '\\', '/', 'g')<CR>
+" copy file name
+nnoremap yf :let @" = substitute(expand("%:t"), '\\', '/', 'g')<CR>
+
+" Smart way to move between windows
+nnoremap <C-j> <C-W>j
+nnoremap <C-k> <C-W>k
+nnoremap <C-h> <C-W>h
+nnoremap <C-l> <C-W>l
+
+" Move window to most *left, right...
+nnoremap <Leader>j <C-W>J
+nnoremap <Leader>k <C-W>K
+nnoremap <Leader>h <C-W>H
+nnoremap <Leader>l <C-W>L
+
+" jump to top window
+nnoremap <Leader>K <C-W>t
+nnoremap <Leader>J <C-W>b
+nnoremap <Leader>H 10<C-W>h<C-W>t
+nnoremap <Leader>L 10<C-W>l
+
+"go to previously accessed window 
+nnoremap <M-Left> <C-W>p
+nnoremap <M-Right> <C-W>n
+
+" resize splits
+nnoremap <M-Up> <C-W>+
+nnoremap <M-Down> <C-W>-
+nnoremap <M-Left> <C-W><
+nnoremap <M-Right> <C-W>>
+
+nnoremap <silent> <F12> :NERDTreeToggle<CR>
+nnoremap <silent> <C-F12> :NERDTreeFind<CR>
+nnoremap <silent> <C-Tab> :tabnext<CR>
+nnoremap <silent> <C-S-Tab> :tabNext<CR>
+nnoremap <silent> <C-T> :tabnew<CR>
+
+" open vertical split from quickfix window 
+autocmd! FileType qf nnoremap <buffer> <leader><Enter> <C-w><Enter><C-w>L
+
+nnoremap <Leader>p :FZF <CR>
+"nnoremap <C-P> :call fzf#run(fzf#wrap({'source': 'git ls-files', 'options': ['-i', ' -- :(exclude)*cpp']})) <CR>
+nnoremap <C-P> :call fzf#run(fzf#wrap({'source': 'rg -S -g !test/ --files'})) <CR>
+command! -bang -nargs=* Rg call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case -g \"!test\/\" -g \"!mock\/\" -g !tags ".shellescape(<q-args>), 1, {'options': '--delimiter : --nth 4..'}, <bang>0)
+nnoremap <Leader>ff :Rg <CR>
+"nnoremap <Leader>ff  :call fzf#run(fzf#wrap({'source': 'rg -S -g !test/'})) <CR>
+"nnoremap <Leader>ff  :call fzf#vim#grep("rg --column --line-number --no-heading --color=always --smart-case ".shellescape(<q-args>), 1, <bang>0)'
+"nnoremap <Leader>ff  :call fzf#run(fzf#wrap({'source': 'rg -e'})) <CR>
+"
+command! CtagsUpdate :execute "!ctags --exclude=test --exclude=mock -R *"
+" Git search of a word under cursor
+nnoremap <Leader>fF :Ggrep! <cword> ** ':(exclude)*\/test\/*' ':(exclude)*\/mock\/*' <bar> :copen <CR> <C-W>J
+" Git search of selected text
+vnoremap <Leader>fF y:Ggrep! "<C-R>=escape(@",'/\')<CR>" ** ':(exclude)*\/test\/*' ':(exclude)*\/mock\/*' <bar> :copen <CR> <C-W>J
+" Git search untracked word under cursor
+nnoremap <Leader>fG :Ggrep! --no-exclude-standard --untracked <cword> ** <bar> :copen <CR>
+" Git search a word under cursor ignoring current file
+nnoremap <Leader>fd :Ggrep! <cword> ** ':(exclude)*\/'%:t ':(exclude)*\/test\/*' ':(exclude)*\/mock\/*' <bar> :copen <CR> <C-W>J
+
+"Now when we run :grep inside Vim, it will run rg --vimgrep --smart-case --follow instead
+set grepprg=rg\ --vimgrep\ --smart-case\ --follow
+" search selected text
+vnoremap * y/\V<C-R>=escape(@",'/\')<CR><CR>
+
+"vnoremap <C-P> ""yi" :call fzf#run(fzf#wrap({'source': 'rg -S -g !test/ --files', 'options': '-q' . expand('<cword>')})) <CR> 
+
+function! s:get_visual_selection()
+    " Why is this not a built-in Vim script function?!
+    let [line_start, column_start] = getpos("'<")[1:2]
+    let [line_end, column_end] = getpos("'>")[1:2]
+    let lines = getline(line_start, line_end)
+    if len(lines) == 0
+        return ''
+    endif
+    let lines[-1] = lines[-1][: column_end - (&selection == 'inclusive' ? 1 : 2)]
+    let lines[0] = lines[0][column_start - 1:]
+    return join(lines, "\n")
+endfunction
+
+vnoremap <C-P> print(s:get_visual_selection())
+
+" save 
+nmap <C-S> :update<CR>
+vnoremap <C-S> <C-C>:update<CR>
+inoremap <C-S> <C-O>:update<CR><ESC>
+
+inoremap <C-Space> <C-x><C-n>
+
+" remove hightlight on next enter after search
+nnoremap <silent> <CR> :noh<CR><CR>
+
+cnoremap <C-N> <UP>
+cnoremap <C-P> <Down>
+nnoremap <C-F2> :SwitchSourceHeader <CR>
+nnoremap <F3> :FindFile <CR>
+
+nnoremap <C-F3> :call fzf#run(fzf#wrap({'source': 'git ls-files', 'options': ['-i', '--query', expand('<cword>')]})) <CR>
+"""" >> FZF
+
+" HEX / BIN viewer
+nnoremap <F4> :!xxd <CR>
+" change decimal and hex numbers under cursor
+nnoremap gn :call DecAndHex(expand("<cword>"))<CR>
+
+
+
+
+" Loading extran .vim
 
 exec "source " . g:vimrc_path . "/log_helper.vim"
 " Start Page routine"""""""""""""""""""""""""""""""""""""""""""""""""""""""
