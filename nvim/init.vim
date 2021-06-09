@@ -33,6 +33,7 @@ Plug 'inkarkat/vim-ingo-library'
 Plug 'inkarkat/vim-mark'
 Plug 'NLKNguyen/papercolor-theme'
 Plug 'terryma/vim-multiple-cursors'
+Plug 'wikitopian/hardmode'
 call plug#end()
 
 let g:vimrc_path = expand('<sfile>:p:h')
