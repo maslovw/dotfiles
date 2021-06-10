@@ -33,7 +33,7 @@ Plug 'inkarkat/vim-ingo-library'
 Plug 'inkarkat/vim-mark'
 Plug 'NLKNguyen/papercolor-theme'
 Plug 'terryma/vim-multiple-cursors'
-Plug 'wikitopian/hardmode'
+Plug 'takac/vim-hardtime'
 call plug#end()
 
 let g:vimrc_path = expand('<sfile>:p:h')
@@ -43,13 +43,14 @@ let g:vimrc_path = expand('<sfile>:p:h')
 "let g:airline_section_a = g:airline_section_b
 let g:airline_section_a = '%-0.10{getcwd()}'
 let g:airline_section_y = ''
+let g:hardtime_default_on = 1
 " 
 
 exec "source " . g:vimrc_path . "/esr.vim"
 exec "source " . g:vimrc_path . "/bake.vim"
 
 try
-    exec "source " . g:vimrc_path . "/projects/project_specific.vim"
+exec "source " . g:vimrc_path . "/projects/project_specific.vim"
 endtry
 
 
@@ -100,15 +101,15 @@ set scrolloff=3
 
 " temporary files
 if s:windows
-    set rtp+=~\\bin
-    set backupdir=c:\\temp\\vim\\backup\\
-    set directory=c:\\temp\\vim\\swp\\
-    set undodir=c:\\temp\\vim\\undo\\
-    let g:fzf_history_dir = 'c:\\temp\\vim\\fzf_history\\'
+set rtp+=~\\bin
+set backupdir=c:\\temp\\vim\\backup\\
+set directory=c:\\temp\\vim\\swp\\
+set undodir=c:\\temp\\vim\\undo\\
+let g:fzf_history_dir = 'c:\\temp\\vim\\fzf_history\\'
 else
-    set backupdir=.backup/,~/.backup/,/tmp//
-    set directory=.swp/,~/.swp/,/tmp//
-    set undodir=.undo/,~/.undo/,/tmp//
+set backupdir=.backup/,~/.backup/,/tmp//
+set directory=.swp/,~/.swp/,/tmp//
+set undodir=.undo/,~/.undo/,/tmp//
 endif
 
 
@@ -119,16 +120,16 @@ filetype plugin on
 " colorscheme
 " True color support
 if (empty($TMUX))
-  if (has("nvim"))
-  "For Neovim 0.1.3 and 0.1.4 < https://github.com/neovim/neovim/pull/2198 >
-  let $NVIM_TUI_ENABLE_TRUE_COLOR=1
-  endif
-  "For Neovim > 0.1.5 and Vim > patch 7.4.1799 < https://github.com/vim/vim/commit/61be73bb0f965a895bfb064ea3e55476ac175162 >
-  "Based on Vim patch 7.4.1770 (`guicolors` option) < https://github.com/vim/vim/commit/8a633e3427b47286869aa4b96f2bfc1fe65b25cd >
-  " < https://github.com/neovim/neovim/wiki/Following-HEAD#20160511 >
-  if (has("termguicolors"))
-     set termguicolors
-  endif
+if (has("nvim"))
+"For Neovim 0.1.3 and 0.1.4 < https://github.com/neovim/neovim/pull/2198 >
+let $NVIM_TUI_ENABLE_TRUE_COLOR=1
+endif
+"For Neovim > 0.1.5 and Vim > patch 7.4.1799 < https://github.com/vim/vim/commit/61be73bb0f965a895bfb064ea3e55476ac175162 >
+"Based on Vim patch 7.4.1770 (`guicolors` option) < https://github.com/vim/vim/commit/8a633e3427b47286869aa4b96f2bfc1fe65b25cd >
+" < https://github.com/neovim/neovim/wiki/Following-HEAD#20160511 >
+if (has("termguicolors"))
+    set termguicolors
+endif
 endif
 
 
@@ -143,16 +144,16 @@ set title
 
 " show title as two last folders in CWD 
 augroup dirchange
-    autocmd!
-    autocmd DirChanged * let &titlestring=join(split(v:event['cwd'], '\\')[-2:], '/')
+autocmd!
+autocmd DirChanged * let &titlestring=join(split(v:event['cwd'], '\\')[-2:], '/')
 augroup END
 
 " *\\tmp\\*,
 set wildignore+=*.swp,*.zip,*.exe,*.stackdump,*.o,*.pyc 
 if s:windows
-    set wildignore+=.git\\*,.hg\\*,.svn\\*
+set wildignore+=.git\\*,.hg\\*,.svn\\*
 else
-    set wildignore+=*/.git/*,*/.hg/*,*/.svn/*,*/.DS_Store
+set wildignore+=*/.git/*,*/.hg/*,*/.svn/*,*/.DS_Store
 endif
 
 " CtrlP config
@@ -162,22 +163,22 @@ let g:ctrlp_by_filename = 0
 
 
 let g:ctrlp_custom_ignore = {
-  \ 'dir':  '\v[\/]\.(git|hg|svn|rim|bake)$',
-  \ 'file': '\v\.(exe|so|dll|a|stackdump|cmdline|d|o|bake)$',
-  \ }
+\ 'dir':  '\v[\/]\.(git|hg|svn|rim|bake)$',
+\ 'file': '\v\.(exe|so|dll|a|stackdump|cmdline|d|o|bake)$',
+\ }
 
 
 " Delete trailing white space on save, useful for some filetypes ;)
 fun! CleanExtraSpaces()
-    let save_cursor = getpos(".")
-    let old_query = getreg('/')
-    silent! %s/\s\+$//e
-    call setpos('.', save_cursor)
-    call setreg('/', old_query)
+let save_cursor = getpos(".")
+let old_query = getreg('/')
+silent! %s/\s\+$//e
+call setpos('.', save_cursor)
+call setreg('/', old_query)
 endfun
 
 if has("autocmd")
-    autocmd BufWritePre *.md,*.txt,*.js,*.py,*.wiki,*.sh,*.coffee,*.cpp,*.h :call CleanExtraSpaces()
+autocmd BufWritePre *.md,*.txt,*.js,*.py,*.wiki,*.sh,*.coffee,*.cpp,*.h :call CleanExtraSpaces()
 endif
 
 let g:bake_custom_args = "--time -r -j8"
@@ -190,129 +191,129 @@ let g:bake_custom_args = "--time -r -j8"
 
 " :%s/\s\+$//e
 fun! TrimWhitespace()
-    let l:save = winsaveview()
-    keeppatterns %s/\s\+$//e
-    call winrestview(l:save)
+let l:save = winsaveview()
+keeppatterns %s/\s\+$//e
+call winrestview(l:save)
 endfun
 
 " HeadGuard customization
 function! g:HeaderguardName()
-    return toupper(expand('%:.:gs/[^0-9a-zA-Z_]/_/g'))
+return toupper(expand('%:.:gs/[^0-9a-zA-Z_]/_/g'))
 endfunction
 
 " working with TortoiseGit
 if s:windows
-    :command! TLog Dispatch! TortoiseGitProc.exe /command:log 
-    :command! TLogp Dispatch! TortoiseGitProc.exe /command:log /path:%:p:h
-    :command! TLogf Dispatch! TortoiseGitProc.exe /command:log /path:%:p
-    :command! TCi Dispatch! TortoiseGitProc.exe /command:commit
+:command! TLog Dispatch! TortoiseGitProc.exe /command:log 
+:command! TLogp Dispatch! TortoiseGitProc.exe /command:log /path:%:p:h
+:command! TLogf Dispatch! TortoiseGitProc.exe /command:log /path:%:p
+:command! TCi Dispatch! TortoiseGitProc.exe /command:commit
 endif
 
 """" FZF
 
 command! -bang -nargs=* FGrep
-  \ call fzf#vim#grep(
-  \   'git grep --line-number '.shellescape(<q-args>), 0,
-  \   fzf#vim#with_preview({'dir': systemlist('git rev-parse --show-toplevel')[0]}), <bang>0)
+\ call fzf#vim#grep(
+\   'git grep --line-number '.shellescape(<q-args>), 0,
+\   fzf#vim#with_preview({'dir': systemlist('git rev-parse --show-toplevel')[0]}), <bang>0)
 
 " Switch between Source and Header
 command! -bang -nargs=? -complete=dir FzfSwitchSourceHeader
-  \ call fzf#vim#gitfiles(
-  \   <q-args>, 
-  \   {'options': [
-  \         '--info=inline',
-  \         '--query', substitute(
-  \                      substitute(
-  \                        substitute(
-  \                          expand("%:r"), 
-  \                          "src", "",""), 
-  \                      "include", "",""),
-  \                    "\\", "/", "g") . GetAlternateExtension(),
-  \         '--preview', 'head -n 30 {}'
-  \   ]}, <bang>0)
+\ call fzf#vim#gitfiles(
+\   <q-args>, 
+\   {'options': [
+\         '--info=inline',
+\         '--query', substitute(
+\                      substitute(
+\                        substitute(
+\                          expand("%:r"), 
+\                          "src", "",""), 
+\                      "include", "",""),
+\                    "\\", "/", "g") . GetAlternateExtension(),
+\         '--preview', 'head -n 30 {}'
+\   ]}, <bang>0)
 
 
 function! IsHeader()
-    let header_extensions = ['h', 'hh', 'H', 'HH', 'hxx', 'HXX', 'hpp', 'HPP']
-    let is_header = (count(header_extensions, expand('%:e')) > 0)
+let header_extensions = ['h', 'hh', 'H', 'HH', 'hxx', 'HXX', 'hpp', 'HPP']
+let is_header = (count(header_extensions, expand('%:e')) > 0)
 
-    if is_header
-        return 1
-    endif
+if is_header
+    return 1
+endif
 
-    return 0
+return 0
 endfunction
 
 " Switch from header file to implementation file (and vice versa).
 function! SwitchSourceHeader()
-    let header_extensions = ['h', 'hpp',  'hh', 'H', 'HH', 'hxx', 'HXX', 'HPP']
-    let impl_extensions = ['cpp', 'c', 'mm', 'm', 'C', 'CC']
-    let filename = substitute( expand("%:r"), "\\", "/", "g") 
+let header_extensions = ['h', 'hpp',  'hh', 'H', 'HH', 'hxx', 'HXX', 'HPP']
+let impl_extensions = ['cpp', 'c', 'mm', 'm', 'C', 'CC']
+let filename = substitute( expand("%:r"), "\\", "/", "g") 
 
-    let filename = substitute(filename, "//", "/", "g") . "."
-    if IsHeader()
-        let filename = substitute(filename, "include", "src", "g")
-        if !HasReadableExtensionIn(filename,  impl_extensions)
-            exe 'FzfSwitchSourceHeader'
-        endif
-    else
-        let filename = substitute(filename, "src", "include", "g")
-        if !HasReadableExtensionIn(filename, header_extensions)
-            exe 'FzfSwitchSourceHeader'
-        endif
+let filename = substitute(filename, "//", "/", "g") . "."
+if IsHeader()
+    let filename = substitute(filename, "include", "src", "g")
+    if !HasReadableExtensionIn(filename,  impl_extensions)
+        exe 'FzfSwitchSourceHeader'
     endif
+else
+    let filename = substitute(filename, "src", "include", "g")
+    if !HasReadableExtensionIn(filename, header_extensions)
+        exe 'FzfSwitchSourceHeader'
+    endif
+endif
 endfunction
 
 function! HasReadableExtensionIn(path, extensions)
-    for ext in a:extensions
-        if filereadable(a:path.ext)
-            exe 'e '.fnameescape(a:path.ext)
-            return 1
-        endif
-    endfor
-    return 0
+for ext in a:extensions
+    if filereadable(a:path.ext)
+        exe 'e '.fnameescape(a:path.ext)
+        return 1
+    endif
+endfor
+return 0
 endfunction
 
 function! GetAlternateExtension()
-    let path = expand('%:p:r').'.'
-    "let header_extensions = ['h', 'hh', 'H', 'HH', 'hxx', 'HXX', 'hpp', 'HPP']
-    "let impl_extensions = ['m', 'mm', 'c', 'cpp', 'C', 'CC']
-    let is_header = IsHeader()
+let path = expand('%:p:r').'.'
+"let header_extensions = ['h', 'hh', 'H', 'HH', 'hxx', 'HXX', 'hpp', 'HPP']
+"let impl_extensions = ['m', 'mm', 'c', 'cpp', 'C', 'CC']
+let is_header = IsHeader()
 
-    if !is_header
-        return " .h | .hpp "
-    endif
+if !is_header
+    return " .h | .hpp "
+endif
 
-    return " .cpp | .c"
+return " .cpp | .c"
 endfunction
 
 command! -bang -nargs=? -complete=dir FindFile
-  \ call fzf#vim#gitfiles(
-  \   <q-args>, 
-  \   {'options': [
-  \         '--info=inline',
-  \         '--query', "'" . substitute(
-  \                        substitute(
-  \                        substitute(
-  \                        substitute(
-  \                          expand("<cWORD>"), 
-  \                      "<", "","g"),
-  \                      ">", "","g"),
-  \                      "\"", "","g"),
-  \                    "\\", "/", "g"),
-  \         '--preview', 'head -n 30 {}'
-  \   ]}, <bang>0)
+\ call fzf#vim#gitfiles(
+\   <q-args>, 
+\   {'options': [
+\         '--info=inline',
+\         '--query', "'" . substitute(
+\                        substitute(
+\                        substitute(
+\                        substitute(
+\                          expand("<cWORD>"), 
+\                      "<", "","g"),
+\                      ">", "","g"),
+\                      "\"", "","g"),
+\                    "\\", "/", "g"),
+\         '--preview', 'head -n 30 {}'
+\   ]}, <bang>0)
 
 " vim -b : edit binary using xxd-format!
 augroup Binary
-  au!
-  au BufReadPre  *.bin let &bin=1
-  au BufReadPost *.bin if &bin | %!xxd
-  au BufReadPost *.bin set ft=xxd | endif
-  au BufWritePre *.bin if &bin | %!xxd -r
-  au BufWritePre *.bin endif
-  au BufWritePost *.bin if &bin | %!xxd
-  au BufWritePost *.bin set nomod | endif
+au!
+au BufReadPre  *.bin let &bin=1
+au BufReadPost *.bin if &bin | %!xxd
+au BufReadPost *.bin set ft=xxd | endif
+au BufWritePre *.bin if &bin | %!xxd -r
+au BufWritePre *.bin endif
+au BufWritePost *.bin if &bin | %!xxd
+au BufWritePost *.bin set nomod | endif
 augroup END
 "
 
@@ -351,6 +352,17 @@ nnoremap <Leader>K <C-W>t
 nnoremap <Leader>J <C-W>b
 nnoremap <Leader>H 10<C-W>h<C-W>t
 nnoremap <Leader>L 10<C-W>l
+
+" resize splits
+" maximize vertically
+nnoremap <Leader>v <C-W>\|
+" maximize horizontally 
+nnoremap <Leader>s <C-W>_
+" maximize 
+nnoremap <Leader>o <C-W>_<C-W>\|
+" all equal
+nnoremap <Leader>= <C-W>=
+
 
 "go to previously accessed window 
 nnoremap <M-Left> <C-W>p
